@@ -41,11 +41,19 @@ func tree(root string) error {
 		}
 
 		// skip walking hidden directories but do not skip relative pathing
-		if strings.HasPrefix(name, ".") && !strings.HasPrefix(name, "..") {
+		if info.IsDir() && strings.HasPrefix(name, ".") && !strings.HasPrefix(name, "..") {
 			return filepath.SkipDir
 		}
 
-		fmt.Println(name)
+		rel, err := filepath.Rel(root, path)
+		if err != nil {
+			return fmt.Errorf("Could not rel(%s, %s); %v", root, path, err)
+		}
+
+		// count how deep the current path goes relative to the root dir that started the walk
+		depth := len(strings.Split(rel, string(filepath.Separator)))
+
+		fmt.Printf("%s%s\n", strings.Repeat("  ", depth), name)
 
 		return nil
 	})
