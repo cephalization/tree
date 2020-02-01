@@ -2,10 +2,10 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
-	"strings"
 )
 
 func main() {
@@ -27,36 +27,28 @@ func main() {
 }
 
 func tree(root string) error {
-	// Walk each file starting at root
-	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
+	info, err := os.Stat(root)
+	if err != nil {
+		return fmt.Errorf("Could not stat %s: %v", root, err)
+	}
 
-		name := info.Name()
-
-		// don't print "." for current dir
-		if strings.Compare(name, ".") == 0 {
-			return nil
-		}
-
-		// skip walking hidden directories but do not skip relative pathing
-		if info.IsDir() && strings.HasPrefix(name, ".") && !strings.HasPrefix(name, "..") {
-			return filepath.SkipDir
-		}
-
-		rel, err := filepath.Rel(root, path)
-		if err != nil {
-			return fmt.Errorf("Could not rel(%s, %s); %v", root, path, err)
-		}
-
-		// count how deep the current path goes relative to the root dir that started the walk
-		depth := len(strings.Split(rel, string(filepath.Separator)))
-
-		fmt.Printf("%s%s\n", strings.Repeat("  ", depth), name)
-
+	fmt.Println(info.Name())
+	if !info.IsDir() {
 		return nil
-	})
+	}
 
-	return err
+	infos, err := ioutil.ReadDir(root)
+	if err != nil {
+		return fmt.Errorf("Could not read dir %s: %v", root, err)
+	}
+
+	for _, info := range infos {
+		cwd := filepath.Join(root, info.Name())
+		err := tree(cwd)
+		if err != nil {
+			return fmt.Errorf("Could not print tree at %s: %v", cwd, err)
+		}
+	}
+
+	return nil
 }
