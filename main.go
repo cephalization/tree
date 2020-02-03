@@ -7,6 +7,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/gookit/color"
 )
 
 func main() {
@@ -52,14 +54,11 @@ func tree(root, indent string, index, depth int, lastDir []os.FileInfo) error {
 	//└─
 	pipe := ""
 
-	if depth > 0 {
-		pipe = "├──"
-		if lastDir != nil && index == len(lastDir)-1 {
-			pipe = "└──"
-		}
+	pipe = "├──"
+	if lastDir != nil && index == len(lastDir)-1 {
+		pipe = "└──"
 	}
 
-	// Print file / directory name
 	fileNameFormatted := file.Name()
 
 	// When we are at the top level of the tree command,
@@ -76,9 +75,14 @@ func tree(root, indent string, index, depth int, lastDir []os.FileInfo) error {
 		} else {
 			fileNameFormatted = dir
 		}
-	}
 
-	fmt.Printf("%s%s%s\n", indent, pipe, fileNameFormatted)
+		// Print directory name in green
+		color.Green.Println(fileNameFormatted)
+	} else {
+
+		// Print file / directory name with decorations
+		fmt.Printf("%s%s%s\n", indent, pipe, fileNameFormatted)
+	}
 
 	// Bail out when the file is not a directory
 	if !file.IsDir() {
