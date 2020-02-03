@@ -18,23 +18,40 @@ func main() {
 		args = os.Args[1:]
 	}
 
+	files := make([]os.FileInfo, len(args))
+
+	for i, arg := range args {
+		file, err := os.Stat(arg)
+		if err != nil {
+			log.Fatalf("Could not stat %s: %v", arg, err)
+			return
+		}
+
+		files[i] = file
+	}
+
 	// start building tree for each root dir
-	for _, arg := range args {
-		err := tree(arg, "")
+	for i, arg := range args {
+		err := tree(arg, "", i, files)
 		if err != nil {
 			log.Printf("tree %s: %v\n", arg, err)
 		}
 	}
 }
 
-func tree(root, indent string) error {
+func tree(root, indent string, index int, lastDir []os.FileInfo) error {
 	info, err := os.Stat(root)
 	if err != nil {
 		return fmt.Errorf("Could not stat %s: %v", root, err)
 	}
 
 	// Print initial indent + additional indent then the file name
-	fmt.Printf("%s%s\n", indent, info.Name())
+	pipe := "├──"
+	if lastDir != nil && index == len(lastDir)-1 {
+		pipe = "└──"
+	}
+
+	fmt.Printf("%s%s%s\n", indent, pipe, info.Name())
 
 	// Bail out when the file is not a directory
 	if !info.IsDir() {
@@ -48,16 +65,24 @@ func tree(root, indent string) error {
 	}
 
 	// Recursively call tree with new indentation on each file in directory
-	for _, info := range infos {
+	for i, newInfo := range infos {
 		// Skip hidden files and directories
 		// Additionally skips 'node_modules' but this will be replaced with blacklist map soon
-		if info.Name()[0] == '.' || strings.Compare(info.Name(), "node_modules") == 0 {
+		if newInfo.Name()[0] == '.' || strings.Compare(newInfo.Name(), "node_modules") == 0 {
 			continue
 		}
 
-		cwd := filepath.Join(root, info.Name())
-		newIndent := indent + "  "
-		err := tree(cwd, newIndent)
+		// Print tree characters
+		//│
+		//├─
+		//└─
+		cwd := filepath.Join(root, newInfo.Name())
+		newIndent := indent + "│  "
+		if info.IsDir() && index == len(lastDir)-1 {
+			newIndent = indent + "   "
+		}
+
+		err := tree(cwd, newIndent, i, infos)
 		if err != nil {
 			return fmt.Errorf("Could not print tree at %s: %v", cwd, err)
 		}
