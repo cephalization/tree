@@ -33,14 +33,14 @@ func main() {
 
 	// start building tree for each root dir
 	for i, arg := range args {
-		err := tree(arg, "", i, files)
+		err := tree(arg, "", i, 0, files)
 		if err != nil {
 			log.Printf("tree %s: %v\n", arg, err)
 		}
 	}
 }
 
-func tree(root, indent string, index int, lastDir []os.FileInfo) error {
+func tree(root, indent string, index, depth int, lastDir []os.FileInfo) error {
 	file, err := os.Stat(root)
 	if err != nil {
 		return fmt.Errorf("Could not stat %s: %v", root, err)
@@ -50,13 +50,30 @@ func tree(root, indent string, index int, lastDir []os.FileInfo) error {
 	//│
 	//├─
 	//└─
-	pipe := "├──"
-	if lastDir != nil && index == len(lastDir)-1 {
-		pipe = "└──"
+	pipe := ""
+
+	if depth > 0 {
+		pipe = "├──"
+		if lastDir != nil && index == len(lastDir)-1 {
+			pipe = "└──"
+		}
 	}
 
 	// Print file / directory name
-	fmt.Printf("%s%s%s\n", indent, pipe, file.Name())
+	fileNameFormatted := file.Name()
+
+	// When we are at the top level of the tree command,
+	// print the absolute paths of the requested directories to tree
+	if depth == 0 {
+		dir, err := filepath.Abs(fileNameFormatted)
+		if err != nil {
+			return fmt.Errorf("Could not get absolute path %s:%v", fileNameFormatted, err)
+		}
+		cDir := filepath.Dir(dir)
+		fileNameFormatted = filepath.Join(cDir, root)
+	}
+
+	fmt.Printf("%s%s%s\n", indent, pipe, fileNameFormatted)
 
 	// Bail out when the file is not a directory
 	if !file.IsDir() {
@@ -78,16 +95,19 @@ func tree(root, indent string, index int, lastDir []os.FileInfo) error {
 		}
 
 		// Determine directory indentation
-		newIndent := indent + "│  "
-		if file.IsDir() && index == len(lastDir)-1 {
-			newIndent = indent + "   "
+		newIndent := ""
+		if depth > 0 {
+			newIndent = indent + "│  "
+			if file.IsDir() && index == len(lastDir)-1 {
+				newIndent = indent + "   "
+			}
 		}
 
 		// Get the next path
 		cwd := filepath.Join(root, nextFile.Name())
 
 		// Recurse
-		err := tree(cwd, newIndent, i, directory)
+		err := tree(cwd, newIndent, i, depth+1, directory)
 		if err != nil {
 			return fmt.Errorf("Could not print tree at %s: %v", cwd, err)
 		}
