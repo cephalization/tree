@@ -43,9 +43,12 @@ func main() {
 }
 
 func tree(root, indent string, index, depth int, lastDir []os.FileInfo) error {
+	statErr := false
+
 	file, err := os.Stat(root)
 	if err != nil {
-		return fmt.Errorf("Could not stat %s: %v", root, err)
+		statErr = true
+		// return fmt.Errorf("Could not stat %s: %v", root, err)
 	}
 
 	// Determine correct tree character
@@ -60,6 +63,12 @@ func tree(root, indent string, index, depth int, lastDir []os.FileInfo) error {
 	}
 
 	fileNameFormatted := file.Name()
+
+	// Read the files in this directory
+	directory, err := ioutil.ReadDir(root)
+	if file.IsDir() && err != nil {
+		statErr = true
+	}
 
 	// When we are at the top level of the tree command,
 	// print the absolute paths of the requested directories to tree
@@ -80,12 +89,15 @@ func tree(root, indent string, index, depth int, lastDir []os.FileInfo) error {
 			fileNameFormatted = root
 		}
 
-		// Print directory name in green
+		// Print root directory name in green
 		color.Green.Println(fileNameFormatted)
 	} else {
 
 		// Print file / directory name with decorations
-		if file.IsDir() {
+		if statErr {
+			fmt.Printf("%s%s", indent, pipe)
+			color.Red.Printf("%s\n", fileNameFormatted)
+		} else if file.IsDir() {
 			fmt.Printf("%s%s", indent, pipe)
 			color.Cyan.Printf("%s\n", fileNameFormatted)
 		} else {
@@ -94,14 +106,8 @@ func tree(root, indent string, index, depth int, lastDir []os.FileInfo) error {
 	}
 
 	// Bail out when the file is not a directory
-	if !file.IsDir() {
+	if !file.IsDir() || statErr {
 		return nil
-	}
-
-	// Read the files in this directory
-	directory, err := ioutil.ReadDir(root)
-	if err != nil {
-		return fmt.Errorf("Could not read dir %s: %v", root, err)
 	}
 
 	// Recursively call tree with new indentation on each file in directory
