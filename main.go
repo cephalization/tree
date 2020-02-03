@@ -87,7 +87,7 @@ func tree(root, indent string, index, depth int, lastDir []os.FileInfo) error {
 		// Print file / directory name with decorations
 		if file.IsDir() {
 			fmt.Printf("%s%s", indent, pipe)
-			color.Blue.Printf("%s\n", fileNameFormatted)
+			color.Cyan.Printf("%s\n", fileNameFormatted)
 		} else {
 			fmt.Printf("%s%s%s\n", indent, pipe, fileNameFormatted)
 		}
