@@ -27,7 +27,7 @@ func main() {
 		file, err := os.Stat(arg)
 		if err != nil {
 			log.Fatal(err)
-			return
+			os.Exit(1)
 		}
 
 		files[i] = file
@@ -37,7 +37,7 @@ func main() {
 	for i, arg := range args {
 		err := tree(arg, "", i, 0, files)
 		if err != nil {
-			log.Printf("tree %s: %v\n", arg, err)
+			log.Printf("could not generate tree %s: %v\n", arg, err)
 		}
 	}
 }
