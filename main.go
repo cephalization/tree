@@ -64,16 +64,20 @@ func tree(root, indent string, index, depth int, lastDir []os.FileInfo) error {
 	// When we are at the top level of the tree command,
 	// print the absolute paths of the requested directories to tree
 	if depth == 0 {
-		dir, err := filepath.Abs(fileNameFormatted)
-		if err != nil {
-			return fmt.Errorf("Could not get absolute path %s:%v", fileNameFormatted, err)
-		}
+		if !filepath.IsAbs(root) {
+			dir, err := filepath.Abs(fileNameFormatted)
+			if err != nil {
+				return fmt.Errorf("Could not get absolute path %s:%v", fileNameFormatted, err)
+			}
 
-		if root != "." {
-			cDir := filepath.Dir(dir)
-			fileNameFormatted = filepath.Join(cDir, root)
+			if root != "." {
+				cDir := filepath.Dir(dir)
+				fileNameFormatted = filepath.Join(cDir, root)
+			} else {
+				fileNameFormatted = dir
+			}
 		} else {
-			fileNameFormatted = dir
+			fileNameFormatted = root
 		}
 
 		// Print directory name in green
