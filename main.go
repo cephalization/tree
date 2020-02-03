@@ -69,8 +69,13 @@ func tree(root, indent string, index, depth int, lastDir []os.FileInfo) error {
 		if err != nil {
 			return fmt.Errorf("Could not get absolute path %s:%v", fileNameFormatted, err)
 		}
-		cDir := filepath.Dir(dir)
-		fileNameFormatted = filepath.Join(cDir, root)
+
+		if root != "." {
+			cDir := filepath.Dir(dir)
+			fileNameFormatted = filepath.Join(cDir, root)
+		} else {
+			fileNameFormatted = dir
+		}
 	}
 
 	fmt.Printf("%s%s%s\n", indent, pipe, fileNameFormatted)
