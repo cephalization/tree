@@ -20,7 +20,7 @@ func main() {
 
 	files := make([]os.FileInfo, len(args))
 
-	// read each argument as a file/directory
+	// validate each argument as a file/directory
 	for i, arg := range args {
 		file, err := os.Stat(arg)
 		if err != nil {
